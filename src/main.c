@@ -141,21 +141,6 @@ static void present(HDC hdc, RECT rc) {
         DIB_RGB_COLORS,
         SRCCOPY
     );
-
-    char hud[256];
-    snprintf(hud, sizeof(hud),
-             "HP: %d   Ammo: %d   Score: %d   Mouse: %s   [TAB] bloquear/desbloquear",
-             game.player.hp, game.player.ammo, game.score,
-             mouse_locked ? "bloqueado" : "libre");
-
-    SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, RGB(255, 255, 255));
-    TextOutA(hdc, 10, 10, hud, (int)strlen(hud));
-
-    if (game.game_over) {
-        TextOutA(hdc, 110, 95, "GAME OVER", 9);
-        TextOutA(hdc, 75, 110, "Pulsa R para reiniciar", 22);
-    }
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -229,7 +214,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_hwnd = CreateWindowEx(
         0,
         CLASS_NAME,
-        "Mini DOOM Plus + DLL",
+        "Mini DOOM Plus - Mejorado",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         960, 640,
