@@ -136,12 +136,28 @@ static void enemy_ai(GameState *g) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!g->enemies[i].alive) continue;
 
+        // Actualizar animación
+        g->enemies[i].animation_counter++;
+        if (g->enemies[i].animation_counter > 10) {
+            g->enemies[i].animation_frame = (g->enemies[i].animation_frame + 1) % 4;
+            g->enemies[i].animation_counter = 0;
+        }
+
         float dx = g->player.x - g->enemies[i].x;
         float dy = g->player.y - g->enemies[i].y;
         float dist = sqrtf(dx * dx + dy * dy);
 
         if (dist < 0.75f) {
-            g->player.hp -= 1;
+            int damage = 1;
+            if (g->player.armor > 0) {
+                g->player.armor -= damage;
+                if (g->player.armor < 0) {
+                    g->player.hp += g->player.armor;
+                    g->player.armor = 0;
+                }
+            } else {
+                g->player.hp -= damage;
+            }
             if (g->player.hp <= 0) {
                 g->player.hp = 0;
                 g->game_over = 1;
@@ -297,6 +313,7 @@ static void draw_bullets(GameState *g, uint32_t *pixels, float *zbuffer) {
     }
 }
 
+// Dibujar sprites de enemigos con animación Doom-like
 static void draw_enemies(GameState *g, uint32_t *pixels, float *zbuffer) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!g->enemies[i].alive) continue;
@@ -318,16 +335,100 @@ static void draw_enemies(GameState *g, uint32_t *pixels, float *zbuffer) {
         int y0 = SCREEN_H / 2 - size / 2;
         int y1 = SCREEN_H / 2 + size / 2;
 
+        // Animación del sprite
+        int frame = g->enemies[i].animation_frame;
+        
         for (int x = x0; x <= x1; x++) {
             if (x < 0 || x >= SCREEN_W) continue;
             if (dist >= zbuffer[x]) continue;
 
             for (int y = y0; y <= y1; y++) {
                 if (y < 0 || y >= SCREEN_H) continue;
-                uint32_t c = 0xFFAA2200;
-                if ((x + y) % 2 == 0) c = 0xFFFF4400;
+                
+                // Aplicar patrón de sprite animado
+                uint32_t c;
+                int px = x - x0;
+                int py = y - y0;
+                
+                // Patrón de sprite básico simulando forma de demonio
+                if (py < size / 3) {
+                    // Cabeza
+                    if ((px + py + frame) % 3 == 0) c = 0xFFFF0000;
+                    else c = 0xFFCC0000;
+                } else if (py < 2 * size / 3) {
+                    // Cuerpo
+                    if ((px - py + frame * 2) % 2 == 0) c = 0xFF880000;
+                    else c = 0xFF660000;
+                } else {
+                    // Patas
+                    if (px % 4 < 2) c = 0xFF440000;
+                    else c = 0xFF220000;
+                }
+                
                 put_pixel(x, y, c, pixels);
             }
+        }
+    }
+}
+
+// Dibujar barra de estado tipo Doom original
+static void draw_hud(GameState *g, uint32_t *pixels) {
+    // Fondo de HUD
+    for (int y = SCREEN_H - HUD_HEIGHT; y < SCREEN_H; y++) {
+        for (int x = 0; x < SCREEN_W; x++) {
+            put_pixel(x, y, 0xFF1a1a1a, pixels);
+        }
+    }
+    
+    // Línea divisoria
+    for (int x = 0; x < SCREEN_W; x++) {
+        put_pixel(x, SCREEN_H - HUD_HEIGHT, 0xFFFFAA00, pixels);
+    }
+    
+    // Barra de salud
+    int hp_bar_width = 40;
+    int hp_bar_x = 10;
+    int hp_bar_y = SCREEN_H - 30;
+    
+    // Marco de barra de salud
+    for (int x = hp_bar_x - 1; x <= hp_bar_x + hp_bar_width + 1; x++) {
+        put_pixel(x, hp_bar_y - 1, 0xFFFFFFFF, pixels);
+        put_pixel(x, hp_bar_y + 8, 0xFFFFFFFF, pixels);
+    }
+    for (int y = hp_bar_y; y < hp_bar_y + 8; y++) {
+        put_pixel(hp_bar_x - 1, y, 0xFFFFFFFF, pixels);
+        put_pixel(hp_bar_x + hp_bar_width + 1, y, 0xFFFFFFFF, pixels);
+    }
+    
+    // Relleno de barra de salud
+    int hp_fill = (g->player.hp * hp_bar_width) / 100;
+    uint32_t hp_color = g->player.hp > 50 ? 0xFF00FF00 : (g->player.hp > 25 ? 0xFFFFAA00 : 0xFFFF0000);
+    for (int x = hp_bar_x; x < hp_bar_x + hp_fill; x++) {
+        for (int y = hp_bar_y; y < hp_bar_y + 8; y++) {
+            put_pixel(x, y, hp_color, pixels);
+        }
+    }
+    
+    // Barra de armadura
+    int armor_bar_x = 65;
+    int armor_bar_width = 40;
+    int armor_bar_y = SCREEN_H - 30;
+    
+    // Marco de barra de armadura
+    for (int x = armor_bar_x - 1; x <= armor_bar_x + armor_bar_width + 1; x++) {
+        put_pixel(x, armor_bar_y - 1, 0xFFFFFFFF, pixels);
+        put_pixel(x, armor_bar_y + 8, 0xFFFFFFFF, pixels);
+    }
+    for (int y = armor_bar_y; y < armor_bar_y + 8; y++) {
+        put_pixel(armor_bar_x - 1, y, 0xFFFFFFFF, pixels);
+        put_pixel(armor_bar_x + armor_bar_width + 1, y, 0xFFFFFFFF, pixels);
+    }
+    
+    // Relleno de barra de armadura
+    int armor_fill = (g->player.armor * armor_bar_width) / 100;
+    for (int x = armor_bar_x; x < armor_bar_x + armor_fill; x++) {
+        for (int y = armor_bar_y; y < armor_bar_y + 8; y++) {
+            put_pixel(x, y, 0xFF0099FF, pixels);
         }
     }
 }
@@ -344,20 +445,24 @@ API void game_reset(GameState *g) {
     g->player.a = 0.0f;
     g->player.hp = 100;
     g->player.ammo = 24;
+    g->player.armor = 50;
 
-    g->enemies[0] = (Enemy){ 4.5f, 2.5f, 3, 1 };
-    g->enemies[1] = (Enemy){ 12.5f, 4.5f, 3, 1 };
-    g->enemies[2] = (Enemy){ 10.5f, 10.5f, 3, 1 };
-    g->enemies[3] = (Enemy){ 3.5f, 12.5f, 3, 1 };
-    g->enemies[4] = (Enemy){ 13.0f, 13.0f, 3, 1 };
-    g->enemies[5] = (Enemy){ 7.5f, 2.5f, 3, 1 };
+    g->enemies[0] = (Enemy){ 4.5f, 2.5f, 3, 1, 0, 0 };
+    g->enemies[1] = (Enemy){ 12.5f, 4.5f, 3, 1, 0, 0 };
+    g->enemies[2] = (Enemy){ 10.5f, 10.5f, 3, 1, 0, 0 };
+    g->enemies[3] = (Enemy){ 3.5f, 12.5f, 3, 1, 0, 0 };
+    g->enemies[4] = (Enemy){ 13.0f, 13.0f, 3, 1, 0, 0 };
+    g->enemies[5] = (Enemy){ 7.5f, 2.5f, 3, 1, 0, 0 };
 
     g->score = 0;
     g->game_over = 0;
     g->mouse_locked = 1;
+    g->ticks = 0;
 }
 
 API void game_tick(GameState *g, const InputState *in) {
+    g->ticks++;
+    
     if (g->game_over) {
         if (in->r) {
             game_reset(g);
@@ -405,6 +510,7 @@ API void game_tick(GameState *g, const InputState *in) {
 }
 
 API void game_render(GameState *g, uint32_t *pixels, float *zbuffer) {
+    // Cielo y suelo
     for (int y = 0; y < SCREEN_H; y++) {
         for (int x = 0; x < SCREEN_W; x++) {
             if (y < SCREEN_H / 2) pixels[y * SCREEN_W + x] = 0xFF1E1E3A;
@@ -412,6 +518,7 @@ API void game_render(GameState *g, uint32_t *pixels, float *zbuffer) {
         }
     }
 
+    // Renderizado de raycasting
     for (int x = 0; x < SCREEN_W; x++) {
         float cam = (2.0f * x / (float)SCREEN_W - 1.0f);
         float rayAngle = g->player.a + cam * (FOV * 0.5f);
@@ -436,10 +543,14 @@ API void game_render(GameState *g, uint32_t *pixels, float *zbuffer) {
         }
     }
 
+    // Renderizar objetos
     draw_enemies(g, pixels, zbuffer);
     draw_bullets(g, pixels, zbuffer);
     draw_minimap(g, pixels);
     draw_crosshair(pixels);
+    
+    // Dibujar HUD mejorado
+    draw_hud(g, pixels);
 
     if (g->game_over) {
         for (int y = 55; y < 145; y++) {
