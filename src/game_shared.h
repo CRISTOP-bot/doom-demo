@@ -10,6 +10,7 @@
 #define MAX_ENEMIES 6
 #define MAX_BULLETS 32
 #define FOV 1.0f
+#define HUD_HEIGHT 40
 
 typedef struct {
     int w, a, s, d;
@@ -29,6 +30,8 @@ typedef struct {
     float x, y;
     int hp;
     int alive;
+    int animation_frame;
+    int animation_counter;
 } Enemy;
 
 typedef struct {
@@ -36,6 +39,7 @@ typedef struct {
     float a;
     int hp;
     int ammo;
+    int armor;
 } Player;
 
 typedef struct {
@@ -46,6 +50,7 @@ typedef struct {
     int score;
     int game_over;
     int mouse_locked;
+    int ticks;
 } GameState;
 
 #ifdef BUILDING_GAME_DLL
