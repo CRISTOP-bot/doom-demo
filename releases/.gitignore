@@ -1,0 +1,16 @@
+# Archivos compilados (demasiado grandes para Git)
+*.apk
+*.aab
+*.AppImage
+*.deb
+*.exe
+*.zip
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Mantener solo la documentación
+!RELEASE_NOTES.md
+!BUILD_INSTRUCTIONS.md
+!.gitignore
