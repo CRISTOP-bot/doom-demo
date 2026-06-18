@@ -1,0 +1,56 @@
+{
+  "name": "doom-linux",
+  "version": "1.0.0",
+  "description": "Doom Demo - Linux Desktop Edition",
+  "main": "dist/main.js",
+  "homepage": "./",
+  "author": "CRISTOP",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"pnpm dev:react\" \"wait-on http://localhost:3000 && pnpm dev:electron\"",
+    "dev:react": "vite --port 3000",
+    "dev:electron": "electron .",
+    "build": "pnpm build:react && pnpm build:electron && pnpm build:native",
+    "build:react": "vite build",
+    "build:electron": "tsc src/main.ts --outDir dist --module commonjs --target es2020",
+    "build:native": "node-gyp rebuild",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "electron-squirrel-startup": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.0.0",
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.0",
+    "wait-on": "^8.0.0",
+    "node-gyp": "^10.0.0"
+  },
+  "build": {
+    "appId": "com.doom.linux",
+    "productName": "Doom",
+    "files": [
+      "dist/**/*",
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Game"
+    }
+  }
+}

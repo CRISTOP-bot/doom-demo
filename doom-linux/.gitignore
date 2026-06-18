@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+*.o
+*.so
+*.a
+*.dylib
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
