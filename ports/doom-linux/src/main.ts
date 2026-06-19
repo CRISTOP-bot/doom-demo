@@ -1,5 +1,5 @@
 import { app, BrowserWindow, Menu, ipcMain } from 'electron';
-import path from 'path';
+import * as path from 'path';
 import isDev from 'electron-is-dev';
 
 let mainWindow: BrowserWindow | null = null;
@@ -12,7 +12,6 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false,
     },
     icon: path.join(__dirname, '../assets/icon.png'),
   });
