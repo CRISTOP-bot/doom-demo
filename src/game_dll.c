@@ -39,6 +39,7 @@ static float normalize_angle(float a) {
 }
 
 static void put_pixel(int x, int y, uint32_t c, uint32_t *pixels) {
+    if (pixels == NULL) return;
     if (x >= 0 && x < SCREEN_W && y >= 0 && y < SCREEN_H) {
         pixels[y * SCREEN_W + x] = c;
     }
@@ -49,11 +50,14 @@ static int cell_solid(char c) {
 }
 
 static int is_solid_map(char mapa[MAP_H][MAP_W + 1], int x, int y) {
+    if (mapa == NULL) return 1;
     if (x < 0 || x >= MAP_W || y < 0 || y >= MAP_H) return 1;
     return cell_solid(mapa[y][x]);
 }
 
 static float raycast_distance(char mapa[MAP_H][MAP_W + 1], float ox, float oy, float ang, float maxd) {
+    if (mapa == NULL) return maxd;
+    
     float step = 0.02f;
     float dx = sinf(ang) * step;
     float dy = cosf(ang) * step;
@@ -81,6 +85,8 @@ static float raycast_distance(char mapa[MAP_H][MAP_W + 1], float ox, float oy, f
 }
 
 static int line_of_sight(GameState *g, float x1, float y1, float x2, float y2) {
+    if (g == NULL || g->mapa == NULL) return 0;
+    
     float dx = x2 - x1;
     float dy = y2 - y1;
     float dist = sqrtf(dx * dx + dy * dy);
@@ -101,11 +107,15 @@ static int line_of_sight(GameState *g, float x1, float y1, float x2, float y2) {
 }
 
 static void try_move(GameState *g, float nx, float ny) {
+    if (g == NULL || g->mapa == NULL) return;
+    
     if (!is_solid_map(g->mapa, (int)nx, (int)g->player.y)) g->player.x = nx;
     if (!is_solid_map(g->mapa, (int)g->player.x, (int)ny)) g->player.y = ny;
 }
 
 static void open_near_door(GameState *g) {
+    if (g == NULL || g->mapa == NULL) return;
+    
     int px = (int)g->player.x;
     int py = (int)g->player.y;
 
@@ -118,8 +128,13 @@ static void open_near_door(GameState *g) {
 }
 
 static void pickup_items(GameState *g) {
+    if (g == NULL || g->mapa == NULL) return;
+    
     int x = (int)g->player.x;
     int y = (int)g->player.y;
+    
+    if (x < 0 || x >= MAP_W || y < 0 || y >= MAP_H) return;
+    
     char *cell = &g->mapa[y][x];
 
     if (*cell == 'A') {
@@ -133,6 +148,8 @@ static void pickup_items(GameState *g) {
 }
 
 static void enemy_ai(GameState *g) {
+    if (g == NULL || g->enemies == NULL || g->mapa == NULL) return;
+    
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!g->enemies[i].alive) continue;
 
@@ -176,6 +193,7 @@ static void enemy_ai(GameState *g) {
 }
 
 static void shoot(GameState *g) {
+    if (g == NULL || g->bullets == NULL) return;
     if (g->player.ammo <= 0) return;
 
     for (int i = 0; i < MAX_BULLETS; i++) {
@@ -198,6 +216,8 @@ static void shoot(GameState *g) {
 }
 
 static void update_bullets(GameState *g) {
+    if (g == NULL || g->bullets == NULL || g->enemies == NULL || g->mapa == NULL) return;
+    
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!g->bullets[i].alive) continue;
 
@@ -237,6 +257,8 @@ static void update_bullets(GameState *g) {
 }
 
 static void draw_minimap(GameState *g, uint32_t *pixels) {
+    if (g == NULL || g->mapa == NULL || pixels == NULL) return;
+    
     for (int my = 0; my < MAP_H; my++) {
         for (int mx = 0; mx < MAP_W; mx++) {
             uint32_t col = 0xFF303030;
@@ -270,6 +292,8 @@ static void draw_minimap(GameState *g, uint32_t *pixels) {
 }
 
 static void draw_crosshair(uint32_t *pixels) {
+    if (pixels == NULL) return;
+    
     int cx = SCREEN_W / 2;
     int cy = SCREEN_H / 2;
     for (int i = -4; i <= 4; i++) {
@@ -279,6 +303,8 @@ static void draw_crosshair(uint32_t *pixels) {
 }
 
 static void draw_bullets(GameState *g, uint32_t *pixels, float *zbuffer) {
+    if (g == NULL || g->bullets == NULL || pixels == NULL || zbuffer == NULL) return;
+    
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!g->bullets[i].alive) continue;
 
@@ -315,6 +341,8 @@ static void draw_bullets(GameState *g, uint32_t *pixels, float *zbuffer) {
 
 // Dibujar sprites de enemigos con animación Doom-like
 static void draw_enemies(GameState *g, uint32_t *pixels, float *zbuffer) {
+    if (g == NULL || g->enemies == NULL || pixels == NULL || zbuffer == NULL) return;
+    
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!g->enemies[i].alive) continue;
 
@@ -373,6 +401,8 @@ static void draw_enemies(GameState *g, uint32_t *pixels, float *zbuffer) {
 
 // Dibujar barra de estado tipo Doom original
 static void draw_hud(GameState *g, uint32_t *pixels) {
+    if (g == NULL || pixels == NULL) return;
+    
     // Fondo de HUD
     for (int y = SCREEN_H - HUD_HEIGHT; y < SCREEN_H; y++) {
         for (int x = 0; x < SCREEN_W; x++) {
@@ -434,10 +464,13 @@ static void draw_hud(GameState *g, uint32_t *pixels) {
 }
 
 API void game_reset(GameState *g) {
+    if (g == NULL) return;
+    
     memset(g, 0, sizeof(*g));
 
     for (int y = 0; y < MAP_H; y++) {
-        strcpy(g->mapa[y], initial_map[y]);
+        strncpy(g->mapa[y], initial_map[y], MAP_W);
+        g->mapa[y][MAP_W] = '\0';
     }
 
     g->player.x = 8.0f;
@@ -461,6 +494,8 @@ API void game_reset(GameState *g) {
 }
 
 API void game_tick(GameState *g, const InputState *in) {
+    if (g == NULL || in == NULL) return;
+    
     g->ticks++;
     
     if (g->game_over) {
@@ -510,6 +545,8 @@ API void game_tick(GameState *g, const InputState *in) {
 }
 
 API void game_render(GameState *g, uint32_t *pixels, float *zbuffer) {
+    if (g == NULL || pixels == NULL || zbuffer == NULL) return;
+    
     // Cielo y suelo
     for (int y = 0; y < SCREEN_H; y++) {
         for (int x = 0; x < SCREEN_W; x++) {
