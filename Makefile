@@ -1,61 +1,106 @@
-# =========================
-# COMPILADOR
-# =========================
-CC = gcc
-CFLAGS = -Wall -O2 -I./src
+# ============================================================
+# Mini DOOM Plus - OpenGL Edition
+# Linux Makefile
+# ============================================================
 
-# =========================
-# DIRECTORIOS
-# =========================
-SRC_DIR = src
-BIN_DIR = bin
+PROJECT := doom_plus_gl
 
-# =========================
-# ARCHIVOS
-# =========================
-DLL_SRC = $(SRC_DIR)/game_dll.c \
-          $(SRC_DIR)/doom_graphics.c \
-          $(SRC_DIR)/opengl_render.c
+CC      := gcc
+MODE    ?= release
 
-EXE_SRC = $(SRC_DIR)/main.c
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
 
-DLL = $(BIN_DIR)/game_dll.dll
-EXE = $(BIN_DIR)/doom_plus_gl.exe
+TARGET := $(BIN_DIR)/$(PROJECT)
 
-# =========================
-# DEFAULT
-# =========================
-all: $(BIN_DIR) $(DLL) $(EXE)
+# ------------------------------------------------------------
+# Buscar automáticamente todos los .c
+# ------------------------------------------------------------
 
-# =========================
-# CREAR BIN SI NO EXISTE
-# =========================
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+DEPS := $(OBJS:.o=.d)
+
+# ------------------------------------------------------------
+# Flags
+# ------------------------------------------------------------
+
+WARNINGS := \
+    -Wall \
+    -Wextra \
+    -Wpedantic \
+    -Wshadow \
+    -Wconversion \
+    -Wformat=2
+
+COMMON := \
+    $(WARNINGS) \
+    -std=c11 \
+    -I$(SRC_DIR)
+
+ifeq ($(MODE),debug)
+CFLAGS := $(COMMON) -O0 -g3 -DDEBUG
+LDFLAGS :=
+else
+CFLAGS := $(COMMON) -O3 -DNDEBUG -flto -march=native
+LDFLAGS := -flto -s
+endif
+
+# ------------------------------------------------------------
+# Librerías Linux
+# ------------------------------------------------------------
+
+LIBS := \
+    -lGL \
+    -lGLU \
+    -lX11 \
+    -lm
+
+# ============================================================
+
+.PHONY: all debug release clean rebuild run install uninstall info
+
+all: $(TARGET)
+
+debug:
+	$(MAKE) MODE=debug
+
+release:
+	$(MAKE) MODE=release
+
+info:
+	@echo "Proyecto : $(PROJECT)"
+	@echo "Modo     : $(MODE)"
+	@echo "Compilador: $(CC)"
+
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
 $(BIN_DIR):
-	if not exist $(BIN_DIR) mkdir $(BIN_DIR)
+	mkdir -p $(BIN_DIR)
 
-# =========================
-# COMPILAR OBJETOS DLL
-# =========================
-DLL_OBJ = $(DLL_SRC:.c=.o)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	@echo "[CC] $<"
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(TARGET): $(OBJS) | $(BIN_DIR)
+	@echo "[LD] $@"
+	$(CC) $(OBJS) -o $@ $(LIBS) $(LDFLAGS)
 
-# =========================
-# DLL (lógica del juego)
-# =========================
-$(DLL): $(DLL_OBJ)
-	$(CC) -shared -o $@ $^ -lm
+run: all
+	./$(TARGET)
 
-# =========================
-# EXE (motor OpenGL + WinAPI)
-# =========================
-$(EXE): $(EXE_SRC)
-	$(CC) $^ -o $@ -mwindows -lgdi32 -luser32 -lopengl32 -lglu32
-
-# =========================
-# LIMPIAR
-# =========================
 clean:
-	del /Q src\*.o
-	del /Q bin\*.dll bin\*.exe
+	rm -rf $(OBJ_DIR)
+	rm -rf $(BIN_DIR)
+
+rebuild: clean all
+
+install: all
+	install -Dm755 $(TARGET) /usr/local/bin/$(PROJECT)
+
+uninstall:
+	rm -f /usr/local/bin/$(PROJECT)
+
+-include $(DEPS)
