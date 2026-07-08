@@ -6,6 +6,7 @@ import {
   GestureResponderEvent,
   PanResponder,
   Animated,
+  Text,
 } from "react-native";
 
 interface TouchControlsProps {
@@ -185,7 +186,7 @@ export function TouchControls({ onInputChange }: TouchControlsProps) {
           ]}
           onPress={handleDoorPress}
         >
-          <View style={styles.buttonText}>E</View>
+          <Text style={styles.buttonText}>E</Text>
         </Pressable>
 
         {/* Botón de disparo */}
@@ -197,7 +198,7 @@ export function TouchControls({ onInputChange }: TouchControlsProps) {
           onPressIn={handleFirePress}
           onPressOut={handleFireRelease}
         >
-          <View style={styles.buttonText}>FIRE</View>
+          <Text style={styles.buttonText}>FIRE</Text>
         </Pressable>
       </View>
     </View>

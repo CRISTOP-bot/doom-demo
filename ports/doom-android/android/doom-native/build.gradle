@@ -1,0 +1,25 @@
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    compileSdk rootProject.ext.compileSdkVersion
+    namespace "com.app.doomandroid.nativejni"
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-fexceptions -frtti -std=c++17"
+                cFlags "-Wall"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { NativeModules, Platform } from "react-native";
 
-const { DoomModule } = NativeModules;
+import DoomModule from '@/specs/NativeDoomModuleSpec';
 
 export interface GameState {
   hp: number;
@@ -132,18 +132,6 @@ export function useDoom(options: UseDoomOptions = {}) {
     }
   }, [initialized]);
 
-  // Renderizar frame
-  const render = useCallback(async () => {
-    if (!initialized || !DoomModule) return;
-
-    try {
-      await DoomModule.render();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(`Render error: ${errorMessage}`);
-    }
-  }, [initialized]);
-
   // Reiniciar juego
   const reset = useCallback(async () => {
     if (!initialized || !DoomModule) return;
@@ -162,21 +150,6 @@ export function useDoom(options: UseDoomOptions = {}) {
       setError(`Reset error: ${errorMessage}`);
     }
   }, [initialized]);
-
-  // Establecer viewport
-  const setViewport = useCallback(
-    async (w: number, h: number) => {
-      if (!initialized || !DoomModule) return;
-
-      try {
-        await DoomModule.setViewport(w, h);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(`Viewport error: ${errorMessage}`);
-      }
-    },
-    [initialized]
-  );
 
   // Auto-inicializar si está habilitado
   useEffect(() => {
@@ -199,8 +172,6 @@ export function useDoom(options: UseDoomOptions = {}) {
     cleanup,
     updateInput,
     update,
-    render,
-    reset,
-    setViewport,
+    reset
   };
 }
