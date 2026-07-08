@@ -37,3 +37,6 @@ expoAutolinking.useExpoVersionCatalog()
 
 include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)
+
+include ':doom-native'
+project(':doom-native').projectDir = new File(rootProject.projectDir, 'doom-native')

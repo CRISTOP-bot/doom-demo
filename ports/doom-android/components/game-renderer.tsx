@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Platform, Dimensions } from "react-native";
 import { useDoom } from "@/hooks/use-doom";
+import DoomGLView  from "@/components/gl"
 
 interface GameRendererProps {
   onGameOver?: () => void;
@@ -26,32 +27,12 @@ export function GameRenderer({ onGameOver, onScoreChange }: GameRendererProps) {
     init,
     cleanup,
     updateInput,
-    update,
-    render,
-    setViewport,
+    update
   } = useDoom({
     width: screenWidth,
     height: screenHeight,
     autoInit: false,
   });
-
-  // Inicializar juego cuando el componente se monta
-  useEffect(() => {
-    const initGame = async () => {
-      const success = await init();
-      if (success) {
-        await setViewport(screenWidth, screenHeight);
-        setIsRunning(true);
-      }
-    };
-
-    initGame();
-
-    return () => {
-      cleanup();
-      setIsRunning(false);
-    };
-  }, [init, cleanup, setViewport, screenWidth, screenHeight]);
 
   // Notificar cuando el juego termina
   useEffect(() => {
@@ -67,35 +48,6 @@ export function GameRenderer({ onGameOver, onScoreChange }: GameRendererProps) {
     }
   }, [gameState.score, onScoreChange]);
 
-  // Loop de renderizado
-  useEffect(() => {
-    if (!initialized || !isRunning) return;
-
-    const gameLoop = async () => {
-      try {
-        // Actualizar estado del juego
-        await update();
-
-        // Renderizar frame
-        await render();
-
-        // Continuar con el siguiente frame
-        animationFrameRef.current = requestAnimationFrame(gameLoop);
-      } catch (err) {
-        console.error("Game loop error:", err);
-        setIsRunning(false);
-      }
-    };
-
-    animationFrameRef.current = requestAnimationFrame(gameLoop);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [initialized, isRunning, update, render]);
-
   if (error) {
     return (
       <View style={styles.errorContainer}>
@@ -104,7 +56,7 @@ export function GameRenderer({ onGameOver, onScoreChange }: GameRendererProps) {
     );
   }
 
-  if (!initialized) {
+  if (initialized) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Initializing game...</Text>
@@ -115,7 +67,7 @@ export function GameRenderer({ onGameOver, onScoreChange }: GameRendererProps) {
   return (
     <View ref={gameRef} style={styles.container}>
       {/* Renderizado OpenGL ES (manejado por GLSurfaceView en Android) */}
-      <View style={styles.gameView} />
+      <DoomGLView style={styles.gameView} surfaceWidth={screenWidth} surfaceHeight={screenHeight} />
 
       {/* HUD Overlay */}
       <View style={styles.hudContainer}>
@@ -163,7 +115,6 @@ const styles = StyleSheet.create({
   },
   gameView: {
     flex: 1,
-    backgroundColor: "#000",
   },
   hudContainer: {
     position: "absolute",
